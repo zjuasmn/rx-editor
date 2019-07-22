@@ -11,7 +11,8 @@ developer to do flow-programming on rxjs, and connect it to react/angular code.
 
 1. rx chart
 
-![image](http://assets.processon.com/chart_image/5d347354e4b0e6d919965a32.png)
+![image](https://user-images.githubusercontent.com/4462778/61600463-4de36a00-ac63-11e9-9876-9506fa96e4fc.png)
+
 
 2. rx code (logic)
 
