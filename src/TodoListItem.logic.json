@@ -1,0 +1,177 @@
+{
+  "nodes": {
+    "title$": {
+      "type": "v"
+    },
+    "onDoubleClick$": {
+      "type": "s"
+    },
+    "onBlur$": {
+      "type": "s"
+    },
+    "onCheckboxClick$": {
+      "type": "s"
+    },
+    "onCheck$": {
+      "type": "s",
+      "ref": "onCheck$"
+    },
+    "onChange$": {
+      "type": "s"
+    },
+    "onClick$": {
+      "type": "s"
+    },
+    "onChangeTitle$": {
+      "type": "s",
+      "ref": "onChangeTitle$"
+    },
+    "onRemove$": {
+      "type": "s",
+      "ref": "onRemove$"
+    },
+    "todoListItem$": {
+      "type": "v",
+      "ref": "todoListItem",
+      "watch": true
+    },
+    "editing": {
+      "type": "c",
+      "initial": false
+    },
+    "title": {
+      "type": "c",
+      "initial": ""
+    }
+  },
+  "edges": [
+    {
+      "source": "todoListItem$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "value": "todoListItem => todoListItem.title"
+            }
+          ]
+        }
+      ],
+      "sink": "title$"
+    },
+    {
+      "source": "onDoubleClick$",
+      "pipes": [
+        {
+          "type": "mapTo",
+          "args": [
+            {
+              "type": "const",
+              "value": true
+            }
+          ]
+        }
+      ],
+      "sink": "editing"
+    },
+    {
+      "source": "onBlur$",
+      "pipes": [
+        {
+          "type": "mapTo",
+          "args": [
+            {
+              "type": "const",
+              "value": false
+            }
+          ]
+        }
+      ],
+      "sink": "editing"
+    },
+    {
+      "source": "onBlur$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "todoListItem$",
+                "title$"
+              ],
+              "value": "() => ({ todoListItem: todoListItem$.value, title: title$.value.trim() })"
+            }
+          ]
+        }
+      ],
+      "sink": "onChangeTitle$"
+    },
+    {
+      "source": "onChange$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "value": "e => e.target.value"
+            }
+          ]
+        }
+      ],
+      "sink": "title$"
+    },
+    {
+      "source": "title$",
+      "sink": "title"
+    },
+    {
+      "source": "onClick$",
+      "pipes": [
+        {
+          "type": "mapTo",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "todoListItem$"
+              ],
+              "value": "{ todoListItem: todoListItem$.value }"
+            }
+          ]
+        }
+      ],
+      "sink": "onRemove$"
+    },
+    {
+      "source": "onCheckboxClick$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "value": "e => e.target.checked"
+            }
+          ]
+        },
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "todoListItem$"
+              ],
+              "value": "(completed) => ({ todoListItem: todoListItem$.value, completed })"
+            }
+          ]
+        }
+      ],
+      "sink": "onCheck$"
+    }
+  ]
+}

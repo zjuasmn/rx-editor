@@ -1,0 +1,355 @@
+{
+  "nodes": {
+    "text$": {
+      "type": "v",
+      "initial": ""
+    },
+    "todos$": {
+      "type": "v",
+      "initial": []
+    },
+    "filter$": {
+      "type": "v",
+      "initial": "all"
+    },
+    "onChange$": {
+      "type": "s"
+    },
+    "onKeyPress$": {
+      "type": "s"
+    },
+    "done$": {
+      "type": "s"
+    },
+    "onCheck$": {
+      "type": "s"
+    },
+    "onChangeTitle$": {
+      "type": "s"
+    },
+    "onRemove$": {
+      "type": "s"
+    },
+    "onClickClearCompleted$": {
+      "type": "s"
+    },
+    "onAllFilterClick$": {
+      "type": "s"
+    },
+    "onActiveFilterClick$": {
+      "type": "s"
+    },
+    "onCompletedFilterClick$": {
+      "type": "s"
+    },
+    "onToggleAll$": {
+      "type": "s"
+    },
+    "text": {
+      "type": "c"
+    },
+    "todos": {
+      "type": "c",
+      "initial": []
+    },
+    "filter": {
+      "type": "c",
+      "initial": "all"
+    },
+    "filteredTodos": {
+      "type": "c",
+      "initial": []
+    },
+    "checkedAll$": {
+      "type": "v"
+    },
+    "checkedAll": {
+      "type": "c"
+    },
+    "initialTodos$": {
+      "type": "v",
+      "ref": "initialTodos",
+      "watch": true
+    }
+  },
+  "edges": [
+    {
+      "source": "initialTodos$",
+      "sink": "todos$"
+    },
+    {
+      "source": "onChange$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "value": "e => e.target.value"
+            }
+          ]
+        }
+      ],
+      "sink": "text$"
+    },
+    {
+      "source": "onKeyPress$",
+      "pipes": [
+        {
+          "type": "filter",
+          "args": [
+            {
+              "type": "expression",
+              "value": "e => e.key === 'Enter'"
+            }
+          ]
+        }
+      ],
+      "sink": "done$"
+    },
+    {
+      "source": "done$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "text$"
+              ],
+              "value": "() => ({ id: Date.now(), title: text$.value, completed: false })"
+            }
+          ]
+        },
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "todos$"
+              ],
+              "value": "todo => ([todo, ...todos$.value])"
+            }
+          ]
+        }
+      ],
+      "sink": "todos$"
+    },
+    {
+      "source": "done$",
+      "pipes": [
+        {
+          "type": "mapTo",
+          "args": [
+            {
+              "type": "const",
+              "value": ""
+            }
+          ]
+        }
+      ],
+      "sink": "text$"
+    },
+    {
+      "source": "text$",
+      "sink": "text"
+    },
+    {
+      "source": "todos$",
+      "pipes": [
+        {
+          "type": "tap",
+          "args": [
+            {
+              "type": "expression",
+              "value": "(todos) => localStorage.setItem('todos', JSON.stringify(todos))"
+            }
+          ]
+        }
+      ],
+      "sink": "todos"
+    },
+    {
+      "source": "onCheck$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "todos$"
+              ],
+              "value": "\n              ({ completed, todoListItem }) => todos$.value.map(todo => (\n            todo.id === todoListItem.id\n            ? {\n              ...todo,\n              completed\n            }\n            : todo))\n            "
+            }
+          ]
+        }
+      ],
+      "sink": "todos$"
+    },
+    {
+      "source": "onChangeTitle$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "todos$"
+              ],
+              "value": "({ title, todoListItem }) => todos$.value.map(todo => todo.id === todoListItem.id ? {\n            ...todo,\n            title: title || todo.title,\n          } : todo)"
+            }
+          ]
+        }
+      ],
+      "sink": "todos$"
+    },
+    {
+      "source": "onRemove$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "todos$"
+              ],
+              "value": "({ todoListItem }) => todos$.value.filter(todo => todo.id !== todoListItem.id)"
+            }
+          ]
+        }
+      ],
+      "sink": "todos$"
+    },
+    {
+      "source": "onClickClearCompleted$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "todos$"
+              ],
+              "value": "() => todos$.value.filter(todo => !todo.completed)"
+            }
+          ]
+        }
+      ],
+      "sink": "todos$"
+    },
+    {
+      "source": "onAllFilterClick$",
+      "pipes": [
+        {
+          "type": "mapTo",
+          "args": [
+            {
+              "type": "const",
+              "value": "all"
+            }
+          ]
+        }
+      ],
+      "sink": "filter$"
+    },
+    {
+      "source": "onActiveFilterClick$",
+      "pipes": [
+        {
+          "type": "mapTo",
+          "args": [
+            {
+              "type": "const",
+              "value": "active"
+            }
+          ]
+        }
+      ],
+      "sink": "filter$"
+    },
+    {
+      "source": "onCompletedFilterClick$",
+      "pipes": [
+        {
+          "type": "mapTo",
+          "args": [
+            {
+              "type": "const",
+              "value": "completed"
+            }
+          ]
+        }
+      ],
+      "sink": "filter$"
+    },
+    {
+      "source": "filter$",
+      "sink": "filter"
+    },
+    {
+      "source": {
+        "nodes": [
+          "todos$",
+          "filter$"
+        ],
+        "type": "combineLatest"
+      },
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "value": "([todos, filter]) => todos.filter(({ completed }) =>\n            filter === 'all'\n            || (filter === 'active' && !completed)\n            || (filter === 'completed' && completed)\n            )"
+            }
+          ]
+        }
+      ],
+      "sink": "filteredTodos"
+    },
+    {
+      "source": "onToggleAll$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "refs": [
+                "checkedAll$",
+                "todos$"
+              ],
+              "value": "() => todos$.value.map((todo) => (todo.completed === !checkedAll$.value ? todo : { ...todo, completed: !checkedAll$.value }))"
+            }
+          ]
+        }
+      ],
+      "sink": "todos$"
+    },
+    {
+      "source": "todos$",
+      "pipes": [
+        {
+          "type": "map",
+          "args": [
+            {
+              "type": "expression",
+              "value": "todos => todos.every(({ completed }) => completed)"
+            }
+          ]
+        }
+      ],
+      "sink": "checkedAll$"
+    },
+    {
+      "source": "checkedAll$",
+      "sink": "checkedAll"
+    }
+  ]
+}
