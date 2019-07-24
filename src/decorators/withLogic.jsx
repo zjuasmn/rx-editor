@@ -1,8 +1,12 @@
-import { mapValues } from 'lodash'
+import { mapValues, toPairs } from 'lodash'
 import React from 'react'
 import * as createOperators from 'rxjs'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
 import * as operators from 'rxjs/operators'
+
+const triggerConnect$ = new Subject()
+window.triggerConnect$ = triggerConnect$
+triggerConnect$.subscribe(console.log)
 
 export function withLogic(options) {
   return InnerComponent => class Logic extends React.PureComponent {
@@ -66,6 +70,10 @@ export function withLogic(options) {
         },
       )
       this.nodes = nodes
+      this.triggerSubscriptions = toPairs(nodes)
+        .filter(([,node]) => node instanceof Observable)
+        .map(([name, node]) => node
+          .subscribe(e => triggerConnect$.next({ name, e })))
       const parseSource = (s => typeof s === 'string'
           ? nodes[s]
           : createOperators[s.type](s.nodes.map(n => nodes[n]))
@@ -106,6 +114,7 @@ export function withLogic(options) {
 
     componentWillUnmount() {
       this.edges.forEach($ => $.unsubscribe())
+      this.triggerSubscriptions.forEach($ => $.unsubscribe())
     }
 
     static getDerivedStateFromProps(props, state) {

@@ -3,6 +3,7 @@ import cytoscape from 'cytoscape'
 import dagre from 'cytoscape-dagre'
 import todoListLogic from './TodoList.logic'
 import { toPairs, flatten } from 'lodash'
+import TodoList from './Todo'
 
 cytoscape.use(dagre)
 
@@ -26,7 +27,7 @@ export default class App extends React.PureComponent {
                   { data: { id: edgeIndex, label: source.type } },
                   ...source.nodes.map((n, i) => ({
                     data: {
-                      id: `${edgeIndex}._${i}`,
+                      id: `${edgeIndex}.m${i}`,
                       source: n,
                       target: edgeIndex,
                     },
@@ -62,28 +63,66 @@ export default class App extends React.PureComponent {
       style: [{
         selector: 'node',
         style: {
-          'background-color': '#666',
-          'label': 'data(label)',
+          'transition-property': 'background-color',
+          'transition-duration': '0.5s',
+          "background-color": "#555",
+          "text-outline-color": "#555",
+          "text-outline-width": "2px",
+          "color": "#fff",
+          "text-valign": "center",
+          "text-halign": "center",
+          'content': 'data(label)',
         },
       }, {
         selector: 'edge',
         style: {
-          'width': 3,
+          'width': 2,
           'line-color': '#ccc',
           'target-arrow-color': '#ccc',
-          'target-arrow-shape': 'triangle',
+          'target-arrow-shape': 'triangle-tee',
         },
+      }, {
+        selector: '[type= "pipe"]',
+        style: {
+          width: 16,
+          height: 16,
+        }
+      }, {
+        selector: '.activate',
+        style: {
+          'background-color': 'red',
+          'transition-duration': '0s',
+        }
+      }, {
+        selector: ':selected',
+        style: {
+          'border-color': 'blue',
+          'border-width': 2,
+        }
       }],
       layout: {
         name: 'dagre',
       },
     })
+
+    window.cy = cy
+
+    cy.on('tap', 'node', (e) => e.target.select())
+    window.triggerConnect$.subscribe(({ name, e }) => {
+      cy.$id(name).flashClass('activate')
+    })
   }
 
   render() {
-    // <TodoList initialTodos={JSON.parse(localStorage.getItem('todos')) || []} />
+
     return (
-      <div id="cy" style={{ width: '100%', height: 600 }} />
+      <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
+        <div style={{ flex: 1 }}>
+          <TodoList initialTodos={JSON.parse(localStorage.getItem('todos')) || []} />
+        </div>
+        <div id="cy" style={{ flex: 1, height: 600 }} />
+        <div style={{ flex: 'none', background: '#f7f7f7', width: 240 }}>sidebar</div>
+      </div>
     )
   }
 }
