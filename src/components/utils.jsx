@@ -18,5 +18,5 @@ export const Repeat = (
     keyfn = (_, index) => index,
     ...props
   }) => collection.map((item, index) => (
-  <Component key={keyfn(item, index)} {...{ [map]: item }} {...props} />
+  <Component key={keyfn(item, index)} $key={keyfn(item, index)} {...{ [map]: item }} {...props} />
 ))

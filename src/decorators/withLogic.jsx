@@ -2,13 +2,97 @@ import { mapValues, toPairs } from 'lodash'
 import React from 'react'
 import * as createOperators from 'rxjs'
 import { BehaviorSubject, Observable, Subject } from 'rxjs'
+import { filter } from 'rxjs/operators'
 import * as operators from 'rxjs/operators'
 
-const triggerConnect$ = new Subject()
-window.triggerConnect$ = triggerConnect$
-triggerConnect$.subscribe(console.log)
+const NAME = 'PAT$$'
+window[NAME] = {
+  trigger$: new Subject(),                 // { name, key, id, e }
+  hotUpdate$: new Subject(),               // logicConfig
+  ref$: new BehaviorSubject({}),    // { name: { key: component } }
+  logic$: new BehaviorSubject({}),  // { name: logicConfig }
+}
 
-export function withLogic(options) {
+const buildNodes = (nodesConfig, props, set, watch) => mapValues(
+  (typeof nodesConfig === 'function'
+      ? buildNodes(nodesConfig(props), props, set, watch)
+      : nodesConfig
+  ),
+  (config, name) => {
+    if (config instanceof Observable) {
+      return config
+    }
+    if (!config.type) {
+      set(name)(config)
+      return config
+    }
+
+    switch (config.type) {
+      case 's':
+        return config.ref ? props[config.ref] : new Subject()
+      case 'v': {
+        if (config.ref) {
+          if (config.watch) {
+            const ret = new BehaviorSubject(props[config.ref])
+            watch(config.ref, ret)
+            return ret
+          }
+          return props[config.ref]
+        }
+        return new BehaviorSubject(config.initial)
+      }
+      case 'c': {
+        set(name)(config.initial)
+        return config.initial
+      }
+      default:
+        throw new Error(`invalid config: ${JSON.stringify(config)}`)
+    }
+  },
+)
+
+const buildEdges = (edgesConfig, nodes, props, set) => {
+  const parseSource = (
+    s => typeof s === 'string'
+      ? nodes[s]
+      : createOperators[s.type](s.nodes.map(n => nodes[n]))
+  )
+  return (
+    typeof edgesConfig === 'function'
+      ? buildEdges(edgesConfig(props, { nodes, set }), nodes, props, set)
+      : edgesConfig
+  ).map(value => {
+      if (value instanceof Observable) {
+        return value
+      }
+      return parseSource(value.source).pipe(
+        ...(value.pipes || []).map(
+          ({ type, args }) => operators[type](
+            ...(args.map((arg) => {
+              switch (arg.type) {
+                case 'expression':
+                  return new Function(...(arg.refs || []), `return (${arg.value})`)(
+                    ...(arg.refs || []).map(ref => nodes[ref])
+                  )
+                case 'const':
+                default:
+                  return arg.value
+              }
+            })))
+        ),
+        operators.tap(
+          nodes[value.target] instanceof Subject
+            ? nodes[value.target]
+            : set(value.target)
+        ),
+      )
+    }
+  )
+}
+
+export function withLogic(logic) {
+  let instanceCount = 0
+
   return InnerComponent => class Logic extends React.PureComponent {
     constructor(props) {
       super(props)
@@ -18,103 +102,77 @@ export function withLogic(options) {
       const set = (key) => (value) => initializing
         ? this.state[key] = value
         : this.setState({ [key]: value })
-
-      const nodes = mapValues(
-        (typeof options.nodes === 'function'
-            ? options.nodes(props)
-            : options.nodes
-        ),
-        (config, name) => {
-          if (config instanceof Observable) {
-            return config
-          }
-          if (!config.type) {
-            this.state[name] = config
-            return config
-          }
-          if (config.ref) {
-            switch (config.type) {
-              case 'Subject':
-              case 's':
-                return props[config.ref]
-              case 'BehaviourSubject':
-              case 'var':
-              case 'v': {
-                if (config.watch) {
-                  const ret = new BehaviorSubject(props[config.ref])
-                  this.state.watches$[config.ref] = ret
-                  return ret
-                }
-                return props[config.ref]
+      const watch = (id, v) => {
+        this.state.watches$[id] = v
+      }
+      this.nodes = buildNodes(logic.nodes, props, set, watch)
+      const gao = () => {
+        this.edgesSubscriptions = buildEdges(logic.edges, this.nodes, props, set).map($ => $.subscribe())
+        this.triggerSubscriptions = toPairs(this.nodes)
+          .filter(([, node]) => node instanceof Observable)
+          .map(([id, node]) => node
+            .subscribe(e => {
+              if (props.$key) {
+                window[NAME].trigger$.next({ name: logic.name, key: props.$key, id, e })
               }
-              default:
-                throw new Error(`invalid config: ${JSON.stringify(config)}`)
+            }))
+      }
+
+      gao()
+      this.hotUpdateSubscription = window[NAME].hotUpdate$.pipe(
+        filter(({ name, key }) => name === logic.name && key === props.$key)
+      ).subscribe((logic) => {
+        this.triggerSubscriptions.forEach($ => $.unsubscribe())
+        this.edgesSubscriptions.forEach($ => $.unsubscribe())
+
+        this.nodes = mapValues(
+          buildNodes(logic.nodes, props, set),
+          (value, key) => {
+            if (this.nodes[key] instanceof BehaviorSubject
+              && value instanceof BehaviorSubject) {
+              value.next(this.nodes[key].value)
             }
-          }
-          switch (config.type) {
-            case 'Subject':
-            case 's':
-              return new Subject()
-            case 'BehaviourSubject':
-            case 'var':
-            case 'v':
-              return new BehaviorSubject(config.initial)
-            case 'Const':
-            case 'c': {
-              this.state[name] = config.initial
-              return config.initial
-            }
-            default:
-              throw new Error(`invalid config: ${JSON.stringify(config)}`)
-          }
-        },
-      )
-      this.nodes = nodes
-      this.triggerSubscriptions = toPairs(nodes)
-        .filter(([,node]) => node instanceof Observable)
-        .map(([name, node]) => node
-          .subscribe(e => triggerConnect$.next({ name, e })))
-      const parseSource = (s => typeof s === 'string'
-          ? nodes[s]
-          : createOperators[s.type](s.nodes.map(n => nodes[n]))
-      )
-      this.edges = (
-        typeof options.edges === 'function'
-          ? options.edges(props, { nodes, set })
-          : options.edges
-      ).map(value => {
-          if (value instanceof Observable) {
-            return value
-          }
-          return parseSource(value.source).pipe(
-            ...(value.pipes || []).map(
-              ({ type, args }) => operators[type](
-                ...(args.map((arg) => {
-                  switch (arg.type) {
-                    case 'expression':
-                      return new Function(...(arg.refs || []), `return (${arg.value})`)(
-                        ...(arg.refs || []).map(ref => nodes[ref])
-                      )
-                    case 'const':
-                    default:
-                      return arg.value
-                  }
-                })))
-            ),
-            operators.tap(
-              nodes[value.sink] instanceof Subject
-                ? nodes[value.sink]
-                : set(value.sink)
-            ),
-          )
-        }
-      ).map($ => $.subscribe())
+          })
+        gao()
+      })
       initializing = false
     }
 
+    componentDidMount() {
+      // update logic$
+      instanceCount += 1
+      if (instanceCount === 1) {
+        window[NAME].logic$.next({ ...window[NAME].logic$.value, [logic.name]: logic })
+      }
+      // update ref$
+      if (this.props.$key) {
+        const { ref$ } = window[NAME]
+        ref$.next({
+          ...ref$.value,
+          [logic.name]: {
+            ...ref$.value[logic.name],
+            [this.props.$key]: this,
+          }
+        })
+      }
+    }
+
     componentWillUnmount() {
-      this.edges.forEach($ => $.unsubscribe())
       this.triggerSubscriptions.forEach($ => $.unsubscribe())
+      this.edgesSubscriptions.forEach($ => $.unsubscribe())
+      this.hotUpdateSubscription.unsubscribe()
+      // update logic$
+      instanceCount -= 1
+      if (instanceCount === 0) {
+        delete window[NAME].logic$.value[logic.name]
+        window[NAME].logic$.next(window[NAME].logic$.value)
+      }
+      // update ref$
+      if (this.props.$key) {
+        const { ref$ } = window[NAME]
+        delete ref$.value[logic.name][this.props.$key]
+        ref$.next(ref$.value)
+      }
     }
 
     static getDerivedStateFromProps(props, state) {

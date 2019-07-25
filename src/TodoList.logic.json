@@ -1,4 +1,5 @@
 {
+  "name": "TodoList",
   "nodes": {
     "text$": {
       "type": "v",
@@ -75,7 +76,7 @@
   "edges": [
     {
       "source": "initialTodos$",
-      "sink": "todos$"
+      "target": "todos$"
     },
     {
       "source": "onChange$",
@@ -90,7 +91,7 @@
           ]
         }
       ],
-      "sink": "text$"
+      "target": "text$"
     },
     {
       "source": "onKeyPress$",
@@ -105,7 +106,7 @@
           ]
         }
       ],
-      "sink": "done$"
+      "target": "done$"
     },
     {
       "source": "done$",
@@ -135,7 +136,7 @@
           ]
         }
       ],
-      "sink": "todos$"
+      "target": "todos$"
     },
     {
       "source": "done$",
@@ -150,11 +151,11 @@
           ]
         }
       ],
-      "sink": "text$"
+      "target": "text$"
     },
     {
       "source": "text$",
-      "sink": "text"
+      "target": "text"
     },
     {
       "source": "todos$",
@@ -169,7 +170,7 @@
           ]
         }
       ],
-      "sink": "todos"
+      "target": "todos"
     },
     {
       "source": "onCheck$",
@@ -187,7 +188,7 @@
           ]
         }
       ],
-      "sink": "todos$"
+      "target": "todos$"
     },
     {
       "source": "onChangeTitle$",
@@ -205,7 +206,7 @@
           ]
         }
       ],
-      "sink": "todos$"
+      "target": "todos$"
     },
     {
       "source": "onRemove$",
@@ -223,7 +224,7 @@
           ]
         }
       ],
-      "sink": "todos$"
+      "target": "todos$"
     },
     {
       "source": "onClickClearCompleted$",
@@ -241,7 +242,7 @@
           ]
         }
       ],
-      "sink": "todos$"
+      "target": "todos$"
     },
     {
       "source": "onAllFilterClick$",
@@ -256,7 +257,7 @@
           ]
         }
       ],
-      "sink": "filter$"
+      "target": "filter$"
     },
     {
       "source": "onActiveFilterClick$",
@@ -271,7 +272,7 @@
           ]
         }
       ],
-      "sink": "filter$"
+      "target": "filter$"
     },
     {
       "source": "onCompletedFilterClick$",
@@ -286,11 +287,11 @@
           ]
         }
       ],
-      "sink": "filter$"
+      "target": "filter$"
     },
     {
       "source": "filter$",
-      "sink": "filter"
+      "target": "filter"
     },
     {
       "source": {
@@ -311,7 +312,7 @@
           ]
         }
       ],
-      "sink": "filteredTodos"
+      "target": "filteredTodos"
     },
     {
       "source": "onToggleAll$",
@@ -330,7 +331,7 @@
           ]
         }
       ],
-      "sink": "todos$"
+      "target": "todos$"
     },
     {
       "source": "todos$",
@@ -345,11 +346,11 @@
           ]
         }
       ],
-      "sink": "checkedAll$"
+      "target": "checkedAll$"
     },
     {
       "source": "checkedAll$",
-      "sink": "checkedAll"
+      "target": "checkedAll"
     }
   ]
 }

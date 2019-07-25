@@ -1,128 +1,165 @@
 import React from 'react'
-import cytoscape from 'cytoscape'
-import dagre from 'cytoscape-dagre'
-import todoListLogic from './TodoList.logic'
-import { toPairs, flatten } from 'lodash'
+import { tap } from 'rxjs/operators'
+import * as operators from 'rxjs/operators'
+import { withLogic } from './decorators/withLogic'
+import LogicEditor from './LogicEditor'
 import TodoList from './Todo'
+import todoListLogic from './TodoList.logic'
+import { keys } from 'lodash'
 
-cytoscape.use(dagre)
-
-export default class App extends React.PureComponent {
-  componentDidMount() {
-    const elements = [ // list of graph elements to start with
-      ...toPairs(todoListLogic.nodes).map(([key, value]) => ({
-        data: { id: key, label: key, type: value.type },
-      })),
-      ...flatten(
-        todoListLogic.edges.map(({ source, pipes = [], sink }, edgeIndex) => {
-          const sourceId = typeof source === 'string' ? source : edgeIndex
-
-          // if (typeof source !== 'string') {
-          //   source.nodes.map((name) => ({})))
-          // }
-          return [
-            ...(typeof source === 'string'
-                ? []
-                : [
-                  { data: { id: edgeIndex, label: source.type } },
-                  ...source.nodes.map((n, i) => ({
-                    data: {
-                      id: `${edgeIndex}.m${i}`,
-                      source: n,
-                      target: edgeIndex,
-                    },
-                  })),
-                ]
-            ),
-            ...flatten(pipes.map((pipe, index) => ([
-                { data: { id: `${edgeIndex}.${index}`, type: 'pipe', label: pipe.type } },
-                {
-                  data: {
-                    id: `${edgeIndex}.${index}_l`,
-                    source: index ? `${edgeIndex}.${index - 1}` : sourceId, target: `${edgeIndex}.${index}`,
-                  },
-                },
-              ]),
-            )),
-            ...(pipes.length === 0
-                ? [{ data: { id: `${edgeIndex}.0_l`, source: sourceId, target: sink } }]
-                : [{
-                  data: {
-                    id: `${edgeIndex}.${pipes.length}_l`,
-                    source: `${edgeIndex}.${pipes.length - 1}`,
-                    target: sink,
-                  },
-                }]
-            )]
-        }),
-      ),
-    ]
-    const cy = cytoscape({
-      container: document.getElementById('cy'),
-      elements,
-      style: [{
-        selector: 'node',
-        style: {
-          'transition-property': 'background-color',
-          'transition-duration': '0.5s',
-          "background-color": "#555",
-          "text-outline-color": "#555",
-          "text-outline-width": "2px",
-          "color": "#fff",
-          "text-valign": "center",
-          "text-halign": "center",
-          'content': 'data(label)',
-        },
-      }, {
-        selector: 'edge',
-        style: {
-          'width': 2,
-          'line-color': '#ccc',
-          'target-arrow-color': '#ccc',
-          'target-arrow-shape': 'triangle-tee',
-        },
-      }, {
-        selector: '[type= "pipe"]',
-        style: {
-          width: 16,
-          height: 16,
-        }
-      }, {
-        selector: '.activate',
-        style: {
-          'background-color': 'red',
-          'transition-duration': '0s',
-        }
-      }, {
-        selector: ':selected',
-        style: {
-          'border-color': 'blue',
-          'border-width': 2,
-        }
-      }],
-      layout: {
-        name: 'dagre',
-      },
-    })
-
-    window.cy = cy
-
-    cy.on('tap', 'node', (e) => e.target.select())
-    window.triggerConnect$.subscribe(({ name, e }) => {
-      cy.$id(name).flashClass('activate')
-    })
-  }
-
+class PipeEditor extends React.PureComponent {
   render() {
+    const { config } = this.props
 
     return (
-      <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
-        <div style={{ flex: 1 }}>
-          <TodoList initialTodos={JSON.parse(localStorage.getItem('todos')) || []} />
+      <div>
+        <div>
+          <select value={config.type}>
+            {keys(operators).map(opName => (
+              <option key={opName} value={opName}>{opName}</option>
+            ))
+            }
+          </select>
         </div>
-        <div id="cy" style={{ flex: 1, height: 600 }} />
-        <div style={{ flex: 'none', background: '#f7f7f7', width: 240 }}>sidebar</div>
+        {
+          config.args.map(({ value }, index) => <textarea
+            key={index} value={value} style={{ width: '100%' }} rows={5}
+          />)
+        }
       </div>
     )
   }
 }
+
+class VarEditor extends React.PureComponent {
+  render() {
+    const { data } = this.props
+    console.log(data)
+    // const node = window.scope.TodoList.todoList.nodes[data.id]
+    return (
+      <div style={{ width: '100%' }}>
+        {/*<textarea defaultValue={JSON.stringify(node.value)} id="textarea" />*/}
+        {/*<div>*/}
+        {/*  <button onClick={() => node.next(JSON.parse(document.getElementById('textarea').value))}>save</button>*/}
+        {/*</div>*/}
+      </div>
+    )
+  }
+}
+
+const LogicSelectorView = ({ value, onChange, logics }) => (
+  <select value={value} onChange={onChange}>
+    <option value="">---</option>
+    {keys(logics).map(name => (
+      <option key={name} value={name}>
+        {name}
+      </option>
+    ))}
+  </select>
+)
+const LogicSelector = withLogic({
+  name: 'LogicSelector',
+  nodes: {
+    logic$: { type: 'v', ref: 'logic$' },
+    logics: { type: 'c' },
+  },
+  edges: [
+    {
+      source: 'logic$',
+      target: 'logics'
+    }
+  ]
+})(LogicSelectorView)
+
+const InstanceSelector = withLogic({
+  name: 'InstanceSelector',
+  nodes: {
+    ref$: { type: 'v', ref: 'ref$' },
+    refs: { type: 'c' },
+  },
+  edges: [
+    {
+      source: 'ref$',
+      pipes: [{
+        type: 'tap',
+        args: [{
+          type: 'const',
+          value: console.log,
+        }]
+      }],
+      target: 'refs'
+    }
+  ]
+})(
+  ({ name, value, onChange, refs }) => (
+    <select value={value} onChange={onChange}>
+      <option value="">---</option>
+      {keys(refs[name]).map(key => (
+        <option key={key} value={key}>
+          {key}
+        </option>
+      ))}
+    </select>
+  )
+)
+const NAME = 'PAT$$'
+
+class App extends React.PureComponent {
+  state = { data: null, selectedLogicName: '', selectedInstanceKey: '' }
+  change = (e) => this.setState({
+    data: window[NAME].logic$.value[e.target.value],
+    selectedLogicName: e.target.value,
+    selectedInstanceKey: '',
+  })
+
+  changeInstanceKey = (e) => this.setState({
+    selectedInstanceKey: e.target.value,
+  })
+
+  render() {
+    const { type, config } = this.props.selectedData || {}
+    const { onSelect$ } = this.props.nodes
+    const { data, selectedLogicName, selectedInstanceKey } = this.state
+    return (
+      <div style={{ display: 'flex', height: '100vh' }}>
+        <div style={{ flex: 1 }}>
+          <TodoList initialTodos={JSON.parse(localStorage.getItem('todos')) || []} $key="todoList" />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div>
+            <LogicSelector logic$={window[NAME].logic$} onChange={this.change} value={selectedLogicName} $key="0" />
+            {selectedLogicName && (
+              <InstanceSelector
+                ref$={window[NAME].ref$}
+                name={selectedLogicName}
+                value={selectedInstanceKey}
+                onChange={this.changeInstanceKey}
+              />
+            )}
+            <button>导出</button>
+            <button>导入</button>
+          </div>
+          {data && <LogicEditor key={selectedLogicName} data={data} onSelect$={onSelect$} />}
+        </div>
+        <div style={{ width: 240, background: '#f7f7f7', height: '100%', flex: 'none' }}>
+          {type === 'pipe' && <PipeEditor config={config} />}
+          {type === 'v' && <VarEditor data={this.props.selectedData || {}} />}
+        </div>
+      </div>
+    )
+  }
+}
+
+export default withLogic({
+  nodes: {
+    onSelect$: { type: 's' },
+  },
+  edges: (props, { nodes: { onSelect$ }, set }) => ([
+    onSelect$.pipe(
+      tap(set('selectedData')),
+      // flatMap(() => getData({ problemId: '123' }))
+    ),
+  ]),
+})(App)
+
+

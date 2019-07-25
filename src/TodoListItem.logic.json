@@ -1,4 +1,5 @@
 {
+  "name": "TodoListItem",
   "nodes": {
     "title$": {
       "type": "v"
@@ -58,7 +59,7 @@
           ]
         }
       ],
-      "sink": "title$"
+      "target": "title$"
     },
     {
       "source": "onDoubleClick$",
@@ -73,7 +74,7 @@
           ]
         }
       ],
-      "sink": "editing"
+      "target": "editing"
     },
     {
       "source": "onBlur$",
@@ -88,7 +89,7 @@
           ]
         }
       ],
-      "sink": "editing"
+      "target": "editing"
     },
     {
       "source": "onBlur$",
@@ -107,7 +108,7 @@
           ]
         }
       ],
-      "sink": "onChangeTitle$"
+      "target": "onChangeTitle$"
     },
     {
       "source": "onChange$",
@@ -122,11 +123,11 @@
           ]
         }
       ],
-      "sink": "title$"
+      "target": "title$"
     },
     {
       "source": "title$",
-      "sink": "title"
+      "target": "title"
     },
     {
       "source": "onClick$",
@@ -144,7 +145,7 @@
           ]
         }
       ],
-      "sink": "onRemove$"
+      "target": "onRemove$"
     },
     {
       "source": "onCheckboxClick$",
@@ -171,7 +172,7 @@
           ]
         }
       ],
-      "sink": "onCheck$"
+      "target": "onCheck$"
     }
   ]
 }
