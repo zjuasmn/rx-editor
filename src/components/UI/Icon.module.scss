@@ -1,0 +1,26 @@
+.icon {
+  flex: none;
+  display: inline-block;
+
+  svg {
+    width: 1em;
+    height: 1em;
+    vertical-align: -15%;
+    fill: currentColor;
+    overflow: hidden;
+    display: inline-block;
+  }
+
+  &.block svg {
+    display: block;
+  }
+
+}
+
+.clickable {
+  opacity: 0.8;
+  cursor: pointer;
+  &:hover {
+    opacity: 1;
+  }
+}

@@ -75,10 +75,12 @@
   },
   "edges": [
     {
+      "label": "设置初始列表",
       "source": "initialTodos$",
       "target": "todos$"
     },
     {
+      "label": "记录输入值",
       "source": "onChange$",
       "pipes": [
         {
@@ -94,6 +96,7 @@
       "target": "text$"
     },
     {
+      "label": "输入回车提交",
       "source": "onKeyPress$",
       "pipes": [
         {
@@ -109,6 +112,7 @@
       "target": "done$"
     },
     {
+      "label": "创建新todo",
       "source": "done$",
       "pipes": [
         {
@@ -139,6 +143,7 @@
       "target": "todos$"
     },
     {
+      "label":"清空输入框",
       "source": "done$",
       "pipes": [
         {
@@ -275,6 +280,7 @@
       "target": "filter$"
     },
     {
+      "label": "选择已完成",
       "source": "onCompletedFilterClick$",
       "pipes": [
         {
@@ -294,6 +300,7 @@
       "target": "filter"
     },
     {
+      "label": "更新筛选后的列表",
       "source": {
         "nodes": [
           "todos$",
@@ -315,6 +322,7 @@
       "target": "filteredTodos"
     },
     {
+      "label": "勾选全选",
       "source": "onToggleAll$",
       "pipes": [
         {
@@ -334,6 +342,7 @@
       "target": "todos$"
     },
     {
+      "label": "计算checkedAll",
       "source": "todos$",
       "pipes": [
         {
@@ -349,6 +358,7 @@
       "target": "checkedAll$"
     },
     {
+      "label": "储存checkedAll",
       "source": "checkedAll$",
       "target": "checkedAll"
     }

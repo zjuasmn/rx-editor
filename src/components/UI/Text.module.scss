@@ -1,0 +1,70 @@
+.clickable:hover {
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.color-primary {
+  color: #333;
+}
+
+.color-primary-inverse {
+  color: #fff;
+}
+
+.color-secondary {
+  color: #666;
+}
+
+.color-link {
+  color: #007aff;
+}
+
+.color-danger {
+  color: #ff3b30;
+}
+
+.color-warning {
+  color: #f2920c;
+}
+
+.color-white {
+  color: #fff;
+}
+
+.color-success {
+  color: #0a0;
+}
+
+.icon {
+  font-size: 1rem;
+  margin-right: 4px;
+  margin-bottom: -1px;
+}
+
+a:hover .color-primary {
+  color: #000;
+}
+
+a:hover .color-secondary {
+  color: #333;
+}
+
+.fontsize-xl {
+  font-size: 20px;
+}
+
+.fontsize-lg {
+  font-size: 16px;
+}
+
+.fontsize-md {
+  font-size: 14px;
+}
+
+.fontsize-sm {
+  font-size: 13px;
+}
+
+.fontsize-xs {
+  font-size: 12px;
+}
