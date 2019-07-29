@@ -2,9 +2,13 @@ import cytoscape from 'cytoscape'
 import dagre from 'cytoscape-dagre'
 import { flatten, toPairs } from 'lodash'
 import * as React from 'react'
+import { Subject } from 'rxjs'
 import { tap, filter } from 'rxjs/operators'
+import { selectedInstanceKey$, selectedLogicName$ } from 'services/state'
+import { NodeType } from 'types/logic'
 import { withLogic } from './decorators/withLogic'
 import edgehandles from 'cytoscape-edgehandles'
+import { trigger$ } from 'connector'
 
 cytoscape.use(edgehandles)
 cytoscape.use(dagre)
@@ -26,7 +30,7 @@ const style = [
   }, {
     selector: 'node[type = "pipe"]',
     style: {
-      'background-color': '#0a0',
+      'background-color': NodeType.OPERATOR.color,
       height: 24,
       width: 80,
       shape: 'round-rectangle',
@@ -35,14 +39,14 @@ const style = [
   }, {
     selector: 'node[type = "s"]',
     style: {
-      'background-color': '#a0a',
+      'background-color': NodeType.SIGNAL.color,
       shape: 'diamond',
       'label': 'data(label)',
     },
   }, {
     selector: 'node[type = "v"]',
     style: {
-      'background-color': '#00a',
+      'background-color': NodeType.VARIABLE.color,
       height: 48,
       width: 48,
       shape: 'octagon',
@@ -51,10 +55,19 @@ const style = [
   }, {
     selector: 'node[type = "m"]',
     style: {
-      'background-color': '#a00',
+      'background-color': NodeType.MERGE.color,
       shape: 'ellipse',
       width: 80,
       height: 32,
+      'label': 'data(label)',
+    },
+  }, {
+    selector: 'node[type = "c"]',
+    style: {
+      'background-color': NodeType.STATE.color,
+      shape: 'rectangle',
+      width: 60,
+      height: 40,
       'label': 'data(label)',
     },
   }, {
@@ -129,7 +142,7 @@ const elementsFromLogic = ({ nodes, edges }) => ([
   ),
 ])
 
-class LogicEditor extends React.PureComponent {
+class LogicCanvas extends React.PureComponent {
   divRef = React.createRef()
 
   mountCy = () => {
@@ -143,10 +156,10 @@ class LogicEditor extends React.PureComponent {
       name: 'dagre',
       nodeDimensionsIncludeLabels: true,
     }).run()
-    cy.edgehandles({
-      handleNodes: '[type="v"]',
-      handlePosition: () => 'middle bottom',
-    })
+    // cy.edgehandles({
+    //   handleNodes: '[type="v"]',
+    //   handlePosition: () => 'middle bottom',
+    // })
   }
 
   componentDidMount() {
@@ -172,11 +185,11 @@ class LogicEditor extends React.PureComponent {
   }
 }
 
-const NAME = 'PAT$$'
+
 export default withLogic({
   nodes: {
-    data$: { type: 'v', ref: 'data', watch: true },
-    onSelect$: { type: 's', ref: 'onSelect$' },
+    data$: { type: 'v', watch: 'logic' },
+    onSelect$: new Subject(), // { type: 's', ref: 'onSelect$' },
     cy$: { type: 'v' },
     cy: { type: 'c' },
   },
@@ -220,8 +233,11 @@ export default withLogic({
         })
       }),
     ),
-    window[NAME].trigger$.pipe(
+    trigger$.pipe(
+      tap(({ name, key }) => console.log('flash', name, selectedLogicName$.value, key, selectedInstanceKey$.value)),
+      filter(({ name, key }) => (name === selectedLogicName$.value && key.toString() === selectedInstanceKey$.value)),
+      tap(({ id }) => console.log('flash', id)),
       tap(({ id }) => cy$.value.$id(id).flashClass('activate')),
     ),
   ]),
-})(LogicEditor)
+})(LogicCanvas)

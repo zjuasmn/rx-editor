@@ -33,8 +33,7 @@
     },
     "todoListItem$": {
       "type": "v",
-      "ref": "todoListItem",
-      "watch": true
+      "watch": "todoListItem"
     },
     "editing": {
       "type": "c",

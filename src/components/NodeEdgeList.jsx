@@ -17,23 +17,26 @@ export default class NodeEdgeList extends React.PureComponent {
   toggleEdgeList = () => this.setState(({ edgeListExpanded }) => ({ edgeListExpanded: !edgeListExpanded }))
 
   render() {
-    const { className, logic: { nodes, edges }, nodes: { onAddNode$, onAddEdge$, onSelectEdge$ } = {} } = this.props
+    const { className, logic: { nodes = {}, edges = [] } = {}, nodes: { onAddNode$, onAddEdge$, onSelectEdge$ } = {} } = this.props
     const { nodeListExpanded, edgeListExpanded } = this.state
+    const nodePairs = toPairs(nodes)
     return (
       <div className={classnames(styles.NodeEdgeList, className)}>
         <div className="border-bottom">
           <div className="d-flex p-2">
             <div className="flex-grow-1">nodes</div>
             <DOM tag={Icon} onClick={onAddNode$} name="plus" className="color-secondary" />
-            <Icon
-              name={`chevron-${nodeListExpanded ? 'down' : 'right'}`}
-              onClick={this.toggleNodeList}
-              className="color-secondary ml-2"
-            />
+            {nodePairs.length > 0 && (
+              <Icon
+                name={`chevron-${nodeListExpanded ? 'down' : 'right'}`}
+                onClick={this.toggleNodeList}
+                className="color-secondary ml-2"
+              />
+            )}
           </div>
-          {nodeListExpanded && (
+          {nodeListExpanded && nodePairs.length > 0 && (
             <div className="pb-2">
-              {toPairs(nodes).map(([id, { type: code, label }]) => (
+              {nodePairs.map(([id, { type: code, label }]) => (
                 <a
                   className="pl-3 pr-2 d-block d-flex align-items-center hover-background-secondary"
                   key={id}
@@ -50,13 +53,15 @@ export default class NodeEdgeList extends React.PureComponent {
           <div className="d-flex p-2">
             <div className="flex-grow-1">edges</div>
             <DOM tag={Icon} onClick={onAddEdge$} name="plus" className="color-secondary" />
-            <Icon
-              name={`chevron-${edgeListExpanded ? 'down' : 'right'}`}
-              onClick={this.toggleEdgeList}
-              className="color-secondary ml-2"
-            />
+            {edges.length > 0 && (
+              <Icon
+                name={`chevron-${edgeListExpanded ? 'down' : 'right'}`}
+                onClick={this.toggleEdgeList}
+                className="color-secondary ml-2"
+              />
+            )}
           </div>
-          {edgeListExpanded && (
+          {edgeListExpanded && edges.length > 0 && (
             <div className="py-2">
               {edges.map(({ label, source, pipes, target }, index) => (
                 <a

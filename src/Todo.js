@@ -3,11 +3,13 @@ import React from 'react'
 import { DOM, If, Repeat } from './components/utils'
 import { withLogic } from './decorators/withLogic'
 import './Todo.css'
+import TodoListLogic from 'logics/TodoList'
+import TodoListItemLogic from 'logics/TodoListItem'
 
 class TodoListItemView extends React.PureComponent {
   render() {
-    const { todoListItem: { completed }, title, nodes, editing } = this.props
-    const { onChange$, onBlur$, onCheckboxClick$, onClick$, onDoubleClick$ } = nodes
+    const { todoListItem: { completed }, title, $nodes, editing } = this.props
+    const { onChange$, onBlur$, onCheckboxClick$, onClick$, onDoubleClick$ } = $nodes
 
     return (
       <li className={classnames({ completed, editing })}>
@@ -24,12 +26,12 @@ class TodoListItemView extends React.PureComponent {
   }
 }
 
-const TodoListItem = withLogic(require('./TodoListItem.logic'))(TodoListItemView)
+const TodoListItem = withLogic(TodoListItemLogic)(TodoListItemView)
 
 class TodoList extends React.PureComponent {
   render() {
-    const { text, todos, filter, filteredTodos, checkedAll, nodes } = this.props
-    const { onChange$, onKeyPress$, onCheck$, onChangeTitle$, onRemove$, onToggleAll$, onAllFilterClick$, onClickClearCompleted$, onActiveFilterClick$, onCompletedFilterClick$ } = nodes
+    const { text, todos, filter, filteredTodos, checkedAll, $nodes } = this.props
+    const { onChange$, onKeyPress$, onCheck$, onChangeTitle$, onRemove$, onToggleAll$, onAllFilterClick$, onClickClearCompleted$, onActiveFilterClick$, onCompletedFilterClick$ } = $nodes
     return (
       <>
         <section className="todoapp">
@@ -120,5 +122,4 @@ class TodoList extends React.PureComponent {
   }
 }
 
-export default withLogic(require('./TodoList.logic.json'))
-(TodoList)
+export default withLogic(TodoListLogic)(TodoList)

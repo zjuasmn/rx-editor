@@ -17,7 +17,7 @@ const Field = ({ config, value, onChange,defaultValue }) => (
         style={{
           fontSize: 12,
           lineHeight: '16px',
-          padding: `2px 8px`,
+          padding: `2px 4px`,
           border: '1px solid #e5e5e5',
           borderRadius: 4,
           width: '100%',
